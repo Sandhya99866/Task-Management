@@ -1,0 +1,63 @@
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - task-service
+    environment:
+      - USER_SERVICE_URL=http://user-service:3001
+      - TASK_SERVICE_URL=http://task-service:3002
+      - JWT_SECRET=taskapp_super_secret_key
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/taskapp
+      - JWT_SECRET=taskapp_super_secret_key
+
+  task-service:
+    build:
+      context: ./task-service
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/taskapp
+      - JWT_SECRET=taskapp_super_secret_key
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - EMAIL_FROM=${EMAIL_FROM}
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
